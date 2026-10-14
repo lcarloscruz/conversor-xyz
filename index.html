@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Conversor XYZ</title>
+  <link rel="stylesheet" href="estilos.css">
+    <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#1b1f23">
+  <link rel="icon" href="icono-192.png">
+  <link rel="apple-touch-icon" href="icono-192.png">
+</head>
+<body>
+  <header>
+    <h1>Conversor XYZ → AutoCAD</h1>
+    <p>Topcon GTS · Civil 3D (PNEZD)</p>
+  </header>
+
+  <main>
+    <label class="selector">
+      <strong>📂 Toca para elegir archivo</strong>
+      <span>Archivo .xyz de la estación o del GNSS</span>
+      <input type="file" id="archivo" accept=".xyz,.txt">
+    </label>
+
+    <p id="estado"></p>
+
+    <div class="botones">
+      <button id="btnCSV" disabled>Descargar CSV (PNEZD)</button>
+      <button id="btnTXT" class="secundario" disabled>Descargar TXT (PNEZ)</button>
+      <button id="btnCompartir" class="secundario" disabled hidden>Compartir CSV (WhatsApp, correo…)</button>
+    </div>
+
+    <div class="tabla-caja" id="cajaTabla" hidden>
+      <table id="tabla">
+        <thead>
+          <tr><th>Punto</th><th>Norte</th><th>Este</th><th>Cota</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="parser.js"></script>
+  <script src="exportar.js"></script>
+  <script>
+    let puntosActuales = [];
+    let nombreBase = "puntos";
+
+    const btnCSV = document.getElementById("btnCSV");
+    const btnTXT = document.getElementById("btnTXT");
+    const btnCompartir = document.getElementById("btnCompartir");
+    const estado = document.getElementById("estado");
+
+    // Mostrar "Compartir" solo si el celular lo permite
+    const puedeCompartir = navigator.canShare &&
+      navigator.canShare({ files: [new File(["x"], "x.csv", { type: "text/csv" })] });
+    btnCompartir.hidden = !puedeCompartir;
+
+    document.getElementById("archivo").addEventListener("change", function (e) {
+      const archivo = e.target.files[0];
+      if (!archivo) return;
+
+      const lector = new FileReader();
+      lector.onload = function () {
+        puntosActuales = parsearXYZ(lector.result);
+        nombreBase = archivo.name.replace(/\.[^.]+$/, "");
+
+        const hayPuntos = puntosActuales.length > 0;
+        estado.textContent = hayPuntos
+          ? "✅ " + archivo.name + ": " + puntosActuales.length + " puntos leídos"
+          : "⚠️ " + archivo.name + ": no se encontraron puntos";
+        estado.className = hayPuntos ? "ok" : "";
+
+        btnCSV.disabled = btnTXT.disabled = btnCompartir.disabled = !hayPuntos;
+        document.getElementById("cajaTabla").hidden = !hayPuntos;
+
+        const cuerpo = document.querySelector("#tabla tbody");
+        cuerpo.innerHTML = "";
+        for (const p of puntosActuales) {
+          cuerpo.innerHTML += "<tr><td>" + p.punto + "</td><td>" + p.norte.toFixed(3) +
+            "</td><td>" + p.este.toFixed(3) + "</td><td>" + p.cota.toFixed(3) + "</td></tr>";
+        }
+      };
+      lector.readAsText(archivo, "ISO-8859-1");
+    });
+
+    btnCSV.addEventListener("click", function () {
+      descargar(nombreBase + ".csv", generarCSV(puntosActuales));
+    });
+
+    btnTXT.addEventListener("click", function () {
+      descargar(nombreBase + ".txt", generarTXT(puntosActuales));
+    });
+
+    btnCompartir.addEventListener("click", async function () {
+      const archivo = new File([generarCSV(puntosActuales)], nombreBase + ".csv", { type: "text/csv" });
+      try {
+        await navigator.share({ files: [archivo], title: nombreBase + ".csv" });
+      } catch (err) {
+        // El usuario canceló: no hacer nada
+      }
+    });
+        // Registrar el service worker (modo sin internet)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("sw.js");
+    }
+  </script>
+</body>
+</html>

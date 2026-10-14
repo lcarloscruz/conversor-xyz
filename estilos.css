@@ -1,0 +1,82 @@
+/* estilos.css — Diseño para celular, legible bajo el sol */
+:root {
+  --fondo: #f4f3ef;
+  --tarjeta: #ffffff;
+  --texto: #1b1f23;
+  --suave: #5b6168;
+  --acento: #f2b705;      /* amarillo equipo de topografía */
+  --acento-texto: #1b1f23;
+  --borde: #d9d6cc;
+  --ok: #1f7a3d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--fondo);
+  color: var(--texto);
+  font-size: 17px;
+}
+
+header {
+  background: var(--texto);
+  color: #fff;
+  padding: 16px;
+}
+header h1 { margin: 0; font-size: 20px; }
+header p  { margin: 4px 0 0; font-size: 14px; color: #c9ccd1; }
+
+main { padding: 16px; max-width: 720px; margin: 0 auto; }
+
+/* Zona para elegir archivo */
+.selector {
+  display: block;
+  background: var(--tarjeta);
+  border: 2px dashed var(--borde);
+  border-radius: 14px;
+  padding: 28px 16px;
+  text-align: center;
+  cursor: pointer;
+}
+.selector strong { display: block; font-size: 19px; margin-bottom: 4px; }
+.selector span   { color: var(--suave); font-size: 15px; }
+.selector input  { display: none; }
+
+#estado {
+  margin: 14px 0;
+  font-weight: 600;
+  min-height: 1.4em;
+}
+#estado.ok { color: var(--ok); }
+
+/* Botones grandes para el dedo */
+.botones { display: grid; gap: 10px; margin-bottom: 18px; }
+button {
+  width: 100%;
+  min-height: 54px;
+  border: none;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  background: var(--acento);
+  color: var(--acento-texto);
+  cursor: pointer;
+}
+button.secundario { background: var(--tarjeta); border: 2px solid var(--texto); }
+button:disabled   { opacity: 0.4; cursor: not-allowed; }
+
+/* Tabla con scroll propio */
+.tabla-caja {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  max-height: 55vh;
+  overflow: auto;
+}
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 14px; }
+th, td { padding: 8px 6px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--borde); }
+th:first-child, td:first-child { text-align: left; }
+th { position: sticky; top: 0; background: var(--texto); color: #fff; }
+tbody tr:nth-child(even) { background: #faf9f6; }
