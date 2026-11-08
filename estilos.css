@@ -80,3 +80,5 @@ th, td { padding: 8px 6px; text-align: right; white-space: nowrap; border-bottom
 th:first-child, td:first-child { text-align: left; }
 th { position: sticky; top: 0; background: var(--texto); color: #fff; }
 tbody tr:nth-child(even) { background: #faf9f6; }
+/* Código del punto debajo del número */
+.codigo { color: var(--suave); font-size: 12px; }

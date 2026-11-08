@@ -19,8 +19,8 @@
   <main>
     <label class="selector">
       <strong>📂 Toca para elegir archivo</strong>
-      <span>Archivo .xyz de la estación o del GNSS</span>
-      <input type="file" id="archivo" accept=".xyz,.txt">
+      <span>Archivo .xyz o .raw de la estación</span>
+      <input type="file" id="archivo" accept=".xyz,.raw,.txt">
     </label>
 
     <p id="estado"></p>
@@ -78,7 +78,10 @@
         const cuerpo = document.querySelector("#tabla tbody");
         cuerpo.innerHTML = "";
         for (const p of puntosActuales) {
-          cuerpo.innerHTML += "<tr><td>" + p.punto + "</td><td>" + p.norte.toFixed(3) +
+          const codigo = p.descripcion
+            ? "<br><small class='codigo'>" + p.descripcion.replace(/[<>&]/g, "") + "</small>"
+            : "";
+          cuerpo.innerHTML += "<tr><td>" + p.punto + codigo + "</td><td>" + p.norte.toFixed(3) +
             "</td><td>" + p.este.toFixed(3) + "</td><td>" + p.cota.toFixed(3) + "</td></tr>";
         }
       };
