@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Conversor XYZ</title>
   <link rel="stylesheet" href="estilos.css">
-    <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#1b1f23">
   <link rel="icon" href="icono-192.png">
   <link rel="apple-touch-icon" href="icono-192.png">
@@ -31,6 +31,26 @@
       <button id="btnCompartir" class="secundario" disabled hidden>Compartir CSV (WhatsApp, correo…)</button>
     </div>
 
+    <section class="envio" id="seccionEnvio" hidden>
+      <h2>Enviar a la oficina</h2>
+      <label>Equipo
+        <select id="equipo">
+          <option value="EST-01">EST-01 · Estación Topcon</option>
+          <option value="GNSS-01">GNSS-01 · AllyNav R26</option>
+          <option value="GNSS-02">GNSS-02 · AllyNav R90</option>
+        </select>
+      </label>
+      <label>Proyecto
+        <input id="proyecto" placeholder="Ej.: P01" autocomplete="off">
+      </label>
+      <label>Fecha y hora de la captura
+        <input id="fechaCaptura" type="datetime-local">
+      </label>
+      <button id="btnEnviar">Enviar a la oficina</button>
+    </section>
+
+    <p id="estadoEnvio"></p>
+
     <div class="tabla-caja" id="cajaTabla" hidden>
       <table id="tabla">
         <thead>
@@ -39,13 +59,26 @@
         <tbody></tbody>
       </table>
     </div>
+    <details class="config">
+      <summary>⚙ Configurar envío</summary>
+      <label>URL del receptor
+        <input id="cfgUrl" type="url" placeholder="https://script.google.com/macros/s/.../exec">
+      </label>
+      <label>Clave
+        <input id="cfgClave" type="password" autocomplete="off">
+      </label>
+      <button id="btnGuardarCfg" class="secundario">Guardar configuración</button>
+    </details>
   </main>
 
   <script src="parser.js"></script>
   <script src="exportar.js"></script>
+  <script src="envio.js"></script>
   <script>
     let puntosActuales = [];
     let nombreBase = "puntos";
+    let archivoActual = null;
+    let horaConversion = null;
 
     const btnCSV = document.getElementById("btnCSV");
     const btnTXT = document.getElementById("btnTXT");
@@ -64,6 +97,9 @@
       const lector = new FileReader();
       lector.onload = function () {
         puntosActuales = parsearXYZ(lector.result);
+        archivoActual = archivo;
+        horaConversion = new Date();
+        document.getElementById("fechaCaptura").value = fechaLocal(horaConversion);
         nombreBase = archivo.name.replace(/\.[^.]+$/, "");
 
         const hayPuntos = puntosActuales.length > 0;
@@ -74,6 +110,7 @@
 
         btnCSV.disabled = btnTXT.disabled = btnCompartir.disabled = !hayPuntos;
         document.getElementById("cajaTabla").hidden = !hayPuntos;
+        document.getElementById("seccionEnvio").hidden = !hayPuntos;
 
         const cuerpo = document.querySelector("#tabla tbody");
         cuerpo.innerHTML = "";
@@ -104,7 +141,82 @@
         // El usuario canceló: no hacer nada
       }
     });
-        // Registrar el service worker (modo sin internet)
+
+    // ----- Envío a la oficina -----
+    const estadoEnvio = document.getElementById("estadoEnvio");
+    const inputProyecto = document.getElementById("proyecto");
+    const selectEquipo = document.getElementById("equipo");
+
+    function mostrarEstadoEnvio(r) {
+      if (r.error && r.error !== "sin señal") {
+        estadoEnvio.textContent = "⚠️ " + r.error + (r.pendientes ? " · Pendientes: " + r.pendientes : "");
+      } else if (r.pendientes > 0) {
+        estadoEnvio.textContent = "📶 Sin señal: " + r.pendientes + " envío(s) pendiente(s). Se enviarán solos al recuperar la conexión.";
+      } else if (r.enviados > 0) {
+        estadoEnvio.textContent = "✅ Enviado a la oficina (" + r.enviados + ")";
+      } else {
+        estadoEnvio.textContent = "";
+      }
+    }
+
+    // Fecha en formato del campo datetime-local (hora del celular)
+    function fechaLocal(d) {
+      const dos = n => String(n).padStart(2, "0");
+      return d.getFullYear() + "-" + dos(d.getMonth() + 1) + "-" + dos(d.getDate()) +
+        "T" + dos(d.getHours()) + ":" + dos(d.getMinutes());
+    }
+
+    // Solo muestra el estado si había algo pendiente o enviado
+    function mostrarSiHayAlgo(r) {
+      if (r.enviados > 0 || r.pendientes > 0) mostrarEstadoEnvio(r);
+    }
+
+    // Recordar el último equipo y proyecto usados
+    const ultimo = leerLocal("conversorxyz.ultimo", { equipo: "EST-01", proyecto: "" });
+    selectEquipo.value = ultimo.equipo;
+    inputProyecto.value = ultimo.proyecto;
+
+    document.getElementById("btnEnviar").addEventListener("click", function () {
+      const proyecto = inputProyecto.value.trim().toUpperCase();
+      if (!proyecto) {
+        estadoEnvio.textContent = "⚠️ Escribe el proyecto antes de enviar.";
+        return;
+      }
+      guardarLocal("conversorxyz.ultimo", { equipo: selectEquipo.value, proyecto: proyecto });
+      const extension = (archivoActual.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+      encolar({
+        registro: {
+          fecha_captura: new Date(document.getElementById("fechaCaptura").value || horaConversion).toISOString(),
+          fecha_conversion: horaConversion.toISOString(),
+          id_equipo: selectEquipo.value,
+          id_proyecto: proyecto,
+          archivo_origen: archivoActual.name,
+          formato: extension,
+          tipo_registro: "Convertido",
+          puntos: puntosActuales.length,
+          origen: "Archivo en celular"
+        },
+        archivo: { nombre: nombreBase + ".csv", contenido: generarCSV(puntosActuales) }
+      });
+      estadoEnvio.textContent = "⏳ Enviando…";
+      procesarCola(mostrarEstadoEnvio);
+    });
+
+    // Configuración (una sola vez por celular)
+    const config = leerConfig();
+    document.getElementById("cfgUrl").value = config.url;
+    document.getElementById("cfgClave").value = config.clave;
+    document.getElementById("btnGuardarCfg").addEventListener("click", function () {
+      const ok = guardarConfig(document.getElementById("cfgUrl").value, document.getElementById("cfgClave").value);
+      estadoEnvio.textContent = ok ? "✅ Configuración guardada" : "⚠️ No se pudo guardar la configuración";
+      procesarCola(mostrarSiHayAlgo);
+    });
+
+    // Reintentar lo pendiente al abrir la app y al volver la señal
+    window.addEventListener("online", function () { procesarCola(mostrarSiHayAlgo); });
+    procesarCola(mostrarSiHayAlgo);
+
+    // Registrar el service worker (modo sin internet)
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("sw.js");
     }

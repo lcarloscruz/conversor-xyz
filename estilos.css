@@ -80,5 +80,32 @@ th, td { padding: 8px 6px; text-align: right; white-space: nowrap; border-bottom
 th:first-child, td:first-child { text-align: left; }
 th { position: sticky; top: 0; background: var(--texto); color: #fff; }
 tbody tr:nth-child(even) { background: #faf9f6; }
+
 /* Código del punto debajo del número */
 .codigo { color: var(--suave); font-size: 12px; }
+
+/* Envío a la oficina */
+.envio, .config {
+  background: var(--tarjeta);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.envio h2 { font-size: 18px; margin: 0 0 10px; }
+.envio label, .config label { display: block; font-weight: 600; margin-bottom: 10px; }
+.envio select, .envio input, .config input {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 4px;
+  padding: 8px 10px;
+  font-size: 17px;
+  border: 2px solid var(--borde);
+  border-radius: 10px;
+  background: #fff;
+}
+.config summary { font-weight: 700; cursor: pointer; }
+.config { margin-top: 14px; }
+.config[open] summary { margin-bottom: 10px; }
+#estadoEnvio { font-weight: 600; min-height: 1.4em; }

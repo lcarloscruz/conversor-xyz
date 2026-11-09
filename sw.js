@@ -1,11 +1,12 @@
 // sw.js — Guarda la app en el celular para que funcione sin internet
-const CACHE = "conversor-xyz-v3";
+const CACHE = "conversor-xyz-v4";
 const ARCHIVOS = [
   "./",
   "./index.html",
   "./estilos.css",
   "./parser.js",
   "./exportar.js",
+  "./envio.js",
   "./manifest.json",
   "./icono-192.png",
   "./icono-512.png"
