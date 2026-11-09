@@ -100,7 +100,7 @@
         archivoActual = archivo;
         horaConversion = new Date();
         document.getElementById("fechaCaptura").value = fechaLocal(horaConversion);
-        nombreBase = archivo.name.replace(/\.[^.]+$/, "");
+        nombreBase = archivo.name.replace(/\.[^.]+$/, "").trim();
 
         const hayPuntos = puntosActuales.length > 0;
         estado.textContent = hayPuntos
@@ -183,7 +183,9 @@
         return;
       }
       guardarLocal("conversorxyz.ultimo", { equipo: selectEquipo.value, proyecto: proyecto });
-      const extension = (archivoActual.name.match(/\.[^.]+$/) || [""])[0].toLowerCase();
+      // Algunos Android entregan el archivo sin extensión: se deduce por el contenido
+      const extension = (archivoActual.name.trim().match(/\.[^.]+$/) || [""])[0].toLowerCase() ||
+        (puntosActuales.some(p => p.alturaPrisma !== undefined) ? ".raw" : ".xyz");
       encolar({
         registro: {
           fecha_captura: new Date(document.getElementById("fechaCaptura").value || horaConversion).toISOString(),
