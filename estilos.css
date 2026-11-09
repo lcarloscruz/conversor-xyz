@@ -94,7 +94,7 @@ tbody tr:nth-child(even) { background: #faf9f6; }
 }
 .envio h2 { font-size: 18px; margin: 0 0 10px; }
 .envio label, .config label { display: block; font-weight: 600; margin-bottom: 10px; }
-.envio select, .envio input, .config input {
+.envio select, .envio input, .config input, .config select {
   display: block;
   width: 100%;
   min-height: 48px;
@@ -109,3 +109,4 @@ tbody tr:nth-child(even) { background: #faf9f6; }
 .config { margin-top: 14px; }
 .config[open] summary { margin-bottom: 10px; }
 #estadoEnvio { font-weight: 600; min-height: 1.4em; }
+.nota { color: var(--suave); font-size: 15px; margin: 0 0 10px; }

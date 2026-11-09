@@ -59,6 +59,31 @@
         <tbody></tbody>
       </table>
     </div>
+    <details class="config" id="registroSolo">
+      <summary>📋 Registrar escaneo LiDAR o sesión GNSS estática</summary>
+      <p class="nota">Solo se registran los datos básicos. El archivo se procesa en la oficina.</p>
+      <label>Equipo
+        <select id="rsEquipo">
+          <option value="LID-01">LID-01 · Escáner LiDAR</option>
+          <option value="GNSS-01">GNSS-01 · AllyNav R26 (estático)</option>
+          <option value="GNSS-02">GNSS-02 · AllyNav R90 (estático)</option>
+        </select>
+      </label>
+      <label>Proyecto
+        <input id="rsProyecto" placeholder="Ej.: P01" autocomplete="off">
+      </label>
+      <label>Nombre del archivo en el equipo
+        <input id="rsArchivo" placeholder="Ej.: 064408071855.DAT" autocomplete="off">
+      </label>
+      <label>Fecha y hora de la captura
+        <input id="rsFecha" type="datetime-local">
+      </label>
+      <label>Observaciones (opcional)
+        <input id="rsObs" autocomplete="off">
+      </label>
+      <button id="btnRegistrar">Registrar y enviar</button>
+    </details>
+
     <details class="config">
       <summary>⚙ Configurar envío</summary>
       <label>URL del receptor
@@ -201,6 +226,48 @@
         archivo: { nombre: nombreBase + ".csv", contenido: generarCSV(puntosActuales) }
       });
       estadoEnvio.textContent = "⏳ Enviando…";
+      procesarCola(mostrarEstadoEnvio);
+    });
+
+    // ----- Registro de LiDAR o GNSS estático (sin archivo) -----
+    document.getElementById("registroSolo").addEventListener("toggle", function () {
+      const f = document.getElementById("rsFecha");
+      if (this.open && !f.value) f.value = fechaLocal(new Date());
+    });
+
+    document.getElementById("btnRegistrar").addEventListener("click", function () {
+      const equipo = document.getElementById("rsEquipo").value;
+      const proyecto = document.getElementById("rsProyecto").value.trim().toUpperCase();
+      const nombre = document.getElementById("rsArchivo").value.trim();
+      const fecha = document.getElementById("rsFecha").value;
+      if (!proyecto || !nombre || !fecha) {
+        estadoEnvio.textContent = "⚠️ Completa proyecto, nombre del archivo y fecha.";
+        estadoEnvio.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const extension = (nombre.match(/\.[^.]+$/) || [""])[0] || (equipo === "LID-01" ? ".las" : ".DAT");
+      const ahora = new Date();
+      encolar({
+        registro: {
+          fecha_captura: new Date(fecha).toISOString(),
+          fecha_conversion: ahora.toISOString(),
+          id_equipo: equipo,
+          id_proyecto: proyecto,
+          archivo_origen: nombre,
+          formato: extension,
+          tipo_registro: "Solo registro",
+          puntos: "",
+          origen: "Registro manual en app",
+          observaciones: document.getElementById("rsObs").value.trim() || "Archivo procesado en oficina"
+        },
+        archivo: null
+      });
+      document.getElementById("rsArchivo").value = "";
+      document.getElementById("rsObs").value = "";
+      document.getElementById("rsFecha").value = "";
+      document.getElementById("registroSolo").open = false;
+      estadoEnvio.textContent = "⏳ Enviando…";
+      estadoEnvio.scrollIntoView({ behavior: "smooth", block: "center" });
       procesarCola(mostrarEstadoEnvio);
     });
 
